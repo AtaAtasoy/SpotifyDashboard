@@ -13,6 +13,7 @@ var request = require('request'); // "Request" library
 var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
+const { privateDecrypt } = require('crypto');
 
 var client_id = process.env.CLIENT_ID; // Your client id
 var client_secret = process.env.CLIENT_SECRET; // Your secret
@@ -20,6 +21,7 @@ var redirect_uri = "http://localhost:8888/callback"; // Your redirect uri
 var access_token;
 var refresh_token;
 var user_id;
+
 
 /**
  * Generates a random string containing numbers and letters
@@ -45,12 +47,12 @@ app.use(express.static(__dirname + '/public'))
    .use(cookieParser());
 
 app.get('/login', function(req, res) {
+  const scope = 'user-read-currently-playing user-top-read playlist-read-private user-read-private user-read-email user-follow-read user-library-read';
 
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
 
   // your application requests authorization
-  var scope = 'user-read-private user-read-email';
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
       response_type: 'code',
@@ -190,7 +192,7 @@ app.get('/checkUserFollowsList', function(req, res){
 
 app.get('/getTopArtistsTracks', function(req, res) {
   var type = req.query.type;
-
+  console.log('Type is set to ' + type)
   var authOptions = {
     url: `https://api.spotify.com/v1/me/top/${type}`,
     headers: { 'Authorization': 'Bearer ' + access_token}
@@ -215,6 +217,7 @@ app.get('/checkCurrentlyPlaying', function(req,res) {
   // Requests the object currently being played on the user's Spotify account.
   request.get(authOptions, function(error, response, body) {
     if (!error && response.statusCode === 200) {
+      console.log(body)
       res.send({
         'currently_playing': body,
         status: 200
